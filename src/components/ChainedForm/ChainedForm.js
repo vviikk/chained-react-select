@@ -4,109 +4,94 @@ import PropTypes from 'prop-types';
 import Select from 'react-select';
 
 const ChainedForm = ({
-    fields, placeholder, onSelect, Wrapper,
+	fields, placeholder, onSelect, Wrapper,
 }) => {
-    const [formState, setFormState] = useState();
+	const [formState, setFormState] = useState();
 
-		let decoratedFields = {};
+	const ControlledSelect = ({field, resets}) => {
+			const [value, setValue] = useState(field.value);
+			const [items, setItems] = useState(field.items);
 
-		const ControlledSelect = (acc, field) => {
-        const [value, setValue] = useState();
-        const [items, setItems] = useState(field.items);
-        const resets = acc.map(f => () => {
-            f.setValue(null);
-            // f.setItems([]);
-        });
-        return <Select
-            value={field.value}
-            options={field.items}
-            placeholder={placeholder}
-						onChange={(selected) => {
-											  field.setValue(selected);
-											  if (selected.value !== field.value.value) {
-                        field.resets.forEach(fn => fn());
-                        setFormState(
-                            decoratedFields,
-                        );
-                    }
-                }}
-        />;
+			return {
+				Select: (<Select
+					value={value}
+					options={items}
+					placeholder={placeholder}
+					onChange={(selected) => {
+						setValue(selected);
+						console.log(formState);
+						// debugger;
+						setFormState();
+						if (value && selected.value !== value.value) {
+							console.log(resets.length);
+							resets.forEach(fn => fn(null));
+						}
+					}}
+				/>),
+				label: field.label,
+				setValue,
+				setItems,
+				value,
 		}
+	}
 
-		decoratedFields = fields.reduceRight(
-        (acc, field) => {
-            const [value, setValue] = useState();
-            const [items, setItems] = useState(field.items);
-            const resets = acc.map(f => () => {
-                f.setValue(null);
-                // f.setItems([]);
-            });
+	const decoratedFields = fields.reduceRight(
+		(acc, field) => {
+			const resets = acc.map(f => () => {
+				f.setValue(null);
+				f.setItems([]);
+			});
 
-            return acc.concat({
-                ...field,
-                value,
-                setValue,
-                items,
-                // setItems,
-								resets,
-								Select: ControlledSelect(acc, field),
-            });
-        },
-        [],
-		).reverse();
+			return acc.concat(
+				ControlledSelect({
+					field,
+					resets,
+				})
+			);
+		},
+		[],
+	).reverse();
 
+	useEffect(
+		() => {
+			const reply = decoratedFields.reduce(
+				(prevState, currentField) => (
+					{
+						...prevState,
+						[currentField.label]: currentField.value,
+					}),
+				{},
+			);
 
+			console.log(reply, formState);
+			onSelect(reply);
+		},
+		[decoratedFields, formState, onSelect],
+	);
 
-    useEffect(() => {
-        const reply = decoratedFields.reduce(
-            (prevState, currentField) => (
-                {
-                    ...prevState,
-                    [currentField.label]: currentField.value,
-                }),
-            {},
-        );
-        console.log(reply);
-        onSelect(reply);
-    },
-    [decoratedFields, formState, onSelect]);
-
-    return (decoratedFields.map(field => (
-        <Wrapper>
-            <label>{field.label}</label>
-            <Select
-                placeholder={placeholder}
-                options={field.items}
-                value={field.value}
-                onChange={(selected) => {
-											  field.setValue(selected);
-											  if (selected.value !== field.value.value) {
-                        field.resets.forEach(fn => fn());
-                        setFormState(
-                            decoratedFields,
-                        );
-                    }
-                }}
-            />
-        </Wrapper>
-    )));
+	return (decoratedFields.map(field => (
+		<Wrapper key={field.label}>
+			<label>{field.label}</label>
+			{field.Select}
+		</Wrapper>
+	)));
 };
 
 ChainedForm.propTypes = {
-    fields: PropTypes.arrayOf(
-        PropTypes.shape({
-            name: PropTypes.string,
-            label: PropTypes.string,
-            items: PropTypes.array,
-        }),
-    ),
-    placeholder: PropTypes.string,
-    onChange: PropTypes.func.isRequired,
-    Wrapper: PropTypes.node.isRequired,
+	fields: PropTypes.arrayOf(
+		PropTypes.shape({
+			name: PropTypes.string,
+			label: PropTypes.string,
+			items: PropTypes.array,
+		}),
+	),
+	placeholder: PropTypes.string,
+	onChange: PropTypes.func.isRequired,
+	Wrapper: PropTypes.node.isRequired,
 };
 
 ChainedForm.defaultProps = {
-    Wrapper: styled.div``,
+	Wrapper: styled.div``,
 };
 
 export default ChainedForm;
