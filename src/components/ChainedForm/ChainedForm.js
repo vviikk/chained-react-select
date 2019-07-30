@@ -3,25 +3,29 @@ import styled from 'styled-components';
 import PropTypes from 'prop-types';
 import Select from 'react-select';
 
-// const reducer = () => {}
-
-const ChainedForm = ({ fields, placeholder, onSelect }) => {
+const ChainedForm = ({ fields, placeholder, onSelect, Wrapper }) => {
     const [formState, setFormState] = useState();
-    
+
     const decoratedFields = fields.reduceRight(
         (acc, field) => {
-            const [value, setValue] = useState();
-            const resets = acc.map(f => f.setValue);
+						const [value, setValue] = useState();
+						const [items, setItems] = useState(field.items);
+            const resets = acc.map(f => () => {
+							f.setValue(null);
+							// f.setItems([]);
+						});
             return acc.concat({
                 ...field,
                 value,
-                setValue,
+								setValue,
+								items,
+								setItems,
                 resets,
             });
         },
         [],
         ).reverse();
-        
+
     useEffect(() => {
         const reply = decoratedFields.reduce(
             (prevState, currentField) => (
@@ -38,22 +42,23 @@ const ChainedForm = ({ fields, placeholder, onSelect }) => {
     );
     return (decoratedFields.map(field => {
         return (
-            <div>
+            <Wrapper>
                 <label>{field.label}</label>
                 <Select
                     placeholder={placeholder}
                     options={field.items}
                     value={field.value}
                     onChange={(selected) => {
-                        // console.log(field, selected);
-                        field.resets.forEach(fn => fn(null));
-                        field.setValue(selected);
-                        setFormState(
-                            decoratedFields,
-                        );
+											  field.setValue(selected);
+											  if(selected.value !== field.value.value) {
+													field.resets.forEach(fn => fn());
+													setFormState(
+															decoratedFields,
+													);
+												}
                     }}
                 />
-            </div>
+            </Wrapper>
         );
     }));
 }
@@ -67,7 +72,12 @@ ChainedForm.propTypes = {
         }
         )),
     placeholder: PropTypes.string,
-    onChange: PropTypes.func.isRequired,
+		onChange: PropTypes.func.isRequired,
+		Wrapper: PropTypes.node.isRequired,
+}
+
+ChainedForm.defaultProps = {
+	Wrapper: styled.div``,
 }
 
 export default ChainedForm;
