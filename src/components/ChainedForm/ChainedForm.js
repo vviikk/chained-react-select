@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import PropTypes from 'prop-types';
-import Select from 'react-select';
+import ReactSelect from 'react-select';
 
 const ChainedForm = ({
 	fields, placeholder, onSelect, Wrapper, shouldReset
@@ -15,7 +15,7 @@ const ChainedForm = ({
 		const [items, setItems] = useState(field.items);
 
 		return {
-			Select: (<Select
+        Select: (<ReactSelect
 				value={value}
 				options={items}
 				placeholder={field.placeholder || placeholder}
