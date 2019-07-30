@@ -1,39 +1,38 @@
+/* eslint-disable jsx-a11y/label-has-associated-control */
+/* eslint-disable jsx-a11y/label-has-for */
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import PropTypes from 'prop-types';
 import Select from 'react-select';
 
 const ChainedForm = ({
-	fields, placeholder, onSelect, Wrapper,
+	fields, placeholder, onSelect, Wrapper, shouldReset
 }) => {
 	const [formState, setFormState] = useState();
 
-	const ControlledSelect = ({field, resets}) => {
-			const [value, setValue] = useState(field.value);
-			const [items, setItems] = useState(field.items);
+	const ControlledSelect = ({ field, resets }) => {
+		const [value, setValue] = useState(field.value);
+		const [items, setItems] = useState(field.items);
 
-			return {
-				Select: (<Select
-					value={value}
-					options={items}
-					placeholder={placeholder}
-					onChange={(selected) => {
-						setValue(selected);
-						console.log(formState);
-						// debugger;
-						setFormState();
-						if (value && selected.value !== value.value) {
-							console.log(resets.length);
-							resets.forEach(fn => fn(null));
-						}
-					}}
-				/>),
-				label: field.label,
-				setValue,
-				setItems,
-				value,
-		}
-	}
+		return {
+			Select: (<Select
+				value={value}
+				options={items}
+				placeholder={field.placeholder || placeholder}
+				onChange={(selected) => {
+					setValue(selected);
+					setFormState();
+					if (value && selected.value !== value.value && shouldReset) {
+						resets.forEach(fn => fn());
+					}
+				}}
+			/>),
+			value,
+			setValue,
+			setItems,
+			field, // append original field object
+		};
+	};
 
 	const decoratedFields = fields.reduceRight(
 		(acc, field) => {
@@ -46,7 +45,7 @@ const ChainedForm = ({
 				ControlledSelect({
 					field,
 					resets,
-				})
+				}),
 			);
 		},
 		[],
@@ -63,16 +62,15 @@ const ChainedForm = ({
 				{},
 			);
 
-			console.log(reply, formState);
 			onSelect(reply);
 		},
 		[decoratedFields, formState, onSelect],
 	);
 
-	return (decoratedFields.map(field => (
+	return (decoratedFields.map(({Select, field}) => (
 		<Wrapper key={field.label}>
 			<label>{field.label}</label>
-			{field.Select}
+			{Select}
 		</Wrapper>
 	)));
 };
@@ -83,15 +81,18 @@ ChainedForm.propTypes = {
 			name: PropTypes.string,
 			label: PropTypes.string,
 			items: PropTypes.array,
+			placeholder: PropTypes.string,
 		}),
 	),
 	placeholder: PropTypes.string,
 	onChange: PropTypes.func.isRequired,
 	Wrapper: PropTypes.node.isRequired,
+	shouldReset: PropTypes.bool,
 };
 
 ChainedForm.defaultProps = {
 	Wrapper: styled.div``,
+	shouldReset: true,
 };
 
 export default ChainedForm;
