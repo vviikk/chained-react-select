@@ -32,7 +32,8 @@ const fields = [
         items: [{
             label: 'ccccsd',
             value: 'cccccsd',
-        }]
+				}],
+				placeholder: 'Custom placeholder'
     }
 ];
 
